@@ -4,13 +4,13 @@
   "private": true,
   "description": "面向未来 AI 时代的人类能力与智能协作操作系统",
   "scripts": {
-  "dev": "next dev",
-  "build": "next build",
-  "start": "next start",
-  "lint": "next lint",
-  "predeploy": "npm run build",
-  "deploy": "gh-pages -d out"
-},
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "predeploy": "npm run build",
+    "deploy": "npx gh-pages -d out"
+  },
   "dependencies": {
     "next": "^14.2.0",
     "react": "^18.3.0",
