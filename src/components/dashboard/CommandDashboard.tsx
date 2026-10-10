@@ -1,14 +1,15 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion, useInView } from "framer-motion";
+import { motion } from "framer-motion";
 import { DASHBOARD_METRICS, TASK_DISTRIBUTION, AGENTS } from "@/lib/data";
 import { GlassCard } from "@/components/core/GlassCard";
 import { AnimatedCounter } from "@/components/effects/AnimatedCounter";
+import { DemoDataNotice } from "@/components/core/DemoDataNotice";
 
 export function CommandDashboard() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const isInView = useInView(containerRef, { once: true, margin: "-100px" });
+  const isInView = true;
   const [time, setTime] = useState("");
 
   useEffect(() => {
@@ -20,6 +21,7 @@ export function CommandDashboard() {
           hour: "2-digit",
           minute: "2-digit",
           second: "2-digit",
+          timeZone: "UTC",
         })
       );
     };
@@ -78,6 +80,7 @@ export function CommandDashboard() {
 
   return (
     <div ref={containerRef} className="w-full space-y-6">
+      <DemoDataNotice>监控数值为静态演示样本；时钟显示当前 UTC 时间。</DemoDataNotice>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
@@ -85,17 +88,17 @@ export function CommandDashboard() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-neon-cyan opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-neon-cyan" />
             </span>
-            <span className="text-[10px] font-mono text-neon-cyan tracking-[0.15em]">
-              SYSTEM LIVE
+            <span className="text-[10px] font-mono text-neon-cyan tracking-normal">
+              DEMO SYSTEM
             </span>
           </div>
-          <span className="text-[10px] font-mono text-white/20">|</span>
-          <span className="text-[10px] font-mono text-white/30">{time} UTC</span>
+          <span className="text-[10px] font-mono text-white/55">|</span>
+          <span className="text-[10px] font-mono text-white/55">{time} UTC</span>
         </div>
 
         <div className="flex items-center gap-4">
           {["CPU: 32%", "MEM: 48%", "NET: 12Gbps"].map((stat) => (
-            <span key={stat} className="text-[9px] font-mono text-white/20 hidden sm:block">
+            <span key={stat} className="text-[11px] font-mono text-white/55 hidden sm:block">
               {stat}
             </span>
           ))}
@@ -106,13 +109,13 @@ export function CommandDashboard() {
         {metrics.map((metric, i) => (
           <motion.div
             key={metric.label}
-            initial={{ opacity: 0, y: 30 }}
+            initial={false}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ delay: i * 0.08, duration: 0.5 }}
           >
             <GlassCard hover className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[9px] font-mono text-white/30 tracking-[0.15em]">
+                <span className="text-[11px] font-mono text-white/55 tracking-normal">
                   {metric.label}
                 </span>
                 <span style={{ color: metric.color, fontSize: "0.75rem" }}>
@@ -128,7 +131,7 @@ export function CommandDashboard() {
                   className="text-2xl md:text-3xl font-mono font-bold tracking-tight"
                   style={{ color: metric.color }}
                 />
-                <span className="text-[9px] font-mono text-white/20">
+                <span className="text-[11px] font-mono text-white/55">
                   {metric.unit}
                 </span>
               </div>
@@ -138,11 +141,11 @@ export function CommandDashboard() {
                   style={{
                     background: `linear-gradient(90deg, ${metric.color}, ${metric.color}60)`,
                   }}
-                  initial={{ width: 0 }}
+                  initial={false}
                   animate={
                     isInView
                       ? {
-                          width: `${Math.min(100, (metric.rawValue < 100 ? metric.rawValue : 85 + Math.random() * 15))}%`,
+                          width: `${Math.min(100, (metric.rawValue < 100 ? metric.rawValue : 90))}%`,
                         }
                       : {}
                   }
@@ -157,17 +160,17 @@ export function CommandDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <motion.div
           className="lg:col-span-2"
-          initial={{ opacity: 0, y: 30 }}
+          initial={false}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ delay: 0.6, duration: 0.5 }}
         >
           <GlassCard>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xs font-mono text-white/60 tracking-[0.2em]">
+              <h3 className="text-xs font-mono text-white/60 tracking-normal">
                 TASK DISTRIBUTION 24H
               </h3>
-              <span className="text-[9px] font-mono text-neon-blue/60">
-                REAL-TIME
+              <span className="text-[11px] font-mono text-neon-blue/60">
+                DEMO SNAPSHOT
               </span>
             </div>
 
@@ -189,9 +192,9 @@ export function CommandDashboard() {
                 {TASK_DISTRIBUTION.map((point, i, arr) => {
                   if (i === 0) return null;
                   const prev = arr[i - 1];
-                  const x1 = ((i - 1) / (arr.length - 2)) * 600;
-                  const x2 = (i / (arr.length - 2)) * 600;
-                  const maxVal = Math.max(...arr.map((p) => p.value));
+                  const x1 = ((i - 1) / (arr.length - 1)) * 600;
+                  const x2 = (i / (arr.length - 1)) * 600;
+                  const maxVal = 1000;
                   const y1 = 200 - (prev.value / maxVal) * 160;
                   const y2 = 200 - (point.value / maxVal) * 160;
 
@@ -199,12 +202,12 @@ export function CommandDashboard() {
                     <motion.line
                       key={i}
                       x1={x1}
-                      y1={y2}
+                      y1={y1}
                       x2={x2}
                       y2={y2}
                       stroke="url(#lineGrad)"
                       strokeWidth="2"
-                      initial={{ pathLength: 0 }}
+                      initial={false}
                       animate={isInView ? { pathLength: 1 } : {}}
                       transition={{ delay: 1 + i * 0.05, duration: 0.8 }}
                     />
@@ -217,7 +220,7 @@ export function CommandDashboard() {
                       `L ${(i / (TASK_DISTRIBUTION.length - 1)) * 600} ${200 - (p.value / 1000) * 160}`
                   ).join(" ")} L 600 200 L 0 200 Z`}
                   fill="url(#areaGrad)"
-                  initial={{ opacity: 0 }}
+                  initial={false}
                   animate={isInView ? { opacity: 1 } : {}}
                   transition={{ delay: 1.5, duration: 0.8 }}
                 />
@@ -225,7 +228,7 @@ export function CommandDashboard() {
 
               <div className="flex justify-between mt-2">
                 {["00:00", "04:00", "08:00", "12:00", "16:00", "20:00"].map((t) => (
-                  <span key={t} className="text-[8px] font-mono text-white/15">
+                  <span key={t} className="text-[11px] font-mono text-white/55">
                     {t}
                   </span>
                 ))}
@@ -235,12 +238,12 @@ export function CommandDashboard() {
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={false}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ delay: 0.8, duration: 0.5 }}
         >
           <GlassCard>
-            <h3 className="text-xs font-mono text-white/60 tracking-[0.2em] mb-4">
+            <h3 className="text-xs font-mono text-white/60 tracking-normal mb-4">
               AGENT STATUS
             </h3>
             <div className="space-y-3">
@@ -257,7 +260,7 @@ export function CommandDashboard() {
                   <motion.div
                     key={agent.id}
                     className="flex items-center gap-3"
-                    initial={{ opacity: 0, x: -20 }}
+                    initial={false}
                     animate={isInView ? { opacity: 1, x: 0 } : {}}
                     transition={{ delay: 1 + i * 0.08 }}
                   >
@@ -279,7 +282,7 @@ export function CommandDashboard() {
                         transition={{ duration: 1.5, repeat: Infinity }}
                       />
                       <span
-                        className="text-[8px] font-mono"
+                        className="text-[11px] font-mono"
                         style={{ color: statusColor }}
                       >
                         {agent.status.toUpperCase()}
@@ -291,14 +294,14 @@ export function CommandDashboard() {
             </div>
 
             <div className="mt-4 pt-4 border-t border-white/5">
-              <div className="flex items-center justify-between text-[9px] font-mono text-white/20">
+              <div className="flex items-center justify-between text-[11px] font-mono text-white/55">
                 <span>UPTIME</span>
                 <span className="text-neon-cyan">{DASHBOARD_METRICS.uptime}%</span>
               </div>
               <div className="mt-1.5 h-0.5 bg-white/5 rounded-full overflow-hidden">
                 <motion.div
                   className="h-full rounded-full bg-gradient-to-r from-neon-cyan to-neon-blue"
-                  initial={{ width: 0 }}
+                  initial={false}
                   animate={isInView ? { width: `${DASHBOARD_METRICS.uptime}%` } : {}}
                   transition={{ delay: 1.5, duration: 1 }}
                 />
@@ -310,7 +313,7 @@ export function CommandDashboard() {
 
       <motion.div
         className="h-px w-full bg-gradient-to-r from-transparent via-neon-blue/10 to-transparent"
-        initial={{ scaleX: 0 }}
+        initial={false}
         animate={isInView ? { scaleX: 1 } : {}}
         transition={{ delay: 1.8, duration: 0.6 }}
       />

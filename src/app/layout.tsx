@@ -27,6 +27,16 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" className="dark">
       <body className="min-h-screen bg-black antialiased">
+        <noscript>
+          <style>{`[style*="opacity:0"], [style*="opacity: 0"] { opacity: 1 !important; filter: none !important; transform: none !important; }
+            .timeline-desktop { display: none !important; }
+            .timeline-mobile-list { display: block !important; }
+            .no-script-links { padding: 16px; display: flex; flex-wrap: wrap; gap: 16px; background: #0B1721; color: #80DBCE; }
+          `}</style>
+          <nav className="no-script-links" aria-label="静态内容导航">
+            <a href="#timeline">文明时间线</a><a href="#agents">Agent</a><a href="#skills">技能</a><a href="#heatmap">城市</a><a href="#dashboard">指挥中心</a>
+          </nav>
+        </noscript>
         {children}
       </body>
     </html>

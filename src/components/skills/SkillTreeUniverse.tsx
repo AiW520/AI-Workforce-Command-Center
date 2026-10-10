@@ -3,12 +3,22 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SKILL_TREE } from "@/lib/data";
+import { DemoDataNotice } from "@/components/core/DemoDataNotice";
+import { emitSceneSelection, subscribeSceneSelection } from "@/lib/scene-selection";
 import type { SkillNode } from "@/types";
 
 export function SkillTreeUniverse() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 900, height: 500 });
   const [hoveredSkill, setHoveredSkill] = useState<string | null>(null);
+  const [selectedSkill, setSelectedSkill] = useState<string | null>(null);
+  useEffect(() => subscribeSceneSelection((selection) => {
+    if (selection.kind === "skill") setSelectedSkill(selection.id);
+  }), []);
+  const selectSkill = (id: string) => {
+    setSelectedSkill(id);
+    emitSceneSelection({ kind: "skill", id, source: "dom" });
+  };
 
   useEffect(() => {
     const update = () => {
@@ -28,7 +38,9 @@ export function SkillTreeUniverse() {
   const scaleY = (pct: number) => (pct / 100) * dimensions.height;
 
   return (
-    <div ref={containerRef} className="relative w-full" style={{ height: dimensions.height }}>
+    <div>
+    <DemoDataNotice>技能等级、解锁状态和进度为原型样本。</DemoDataNotice>
+    <div ref={containerRef} className="relative w-full hidden md:block" style={{ height: dimensions.height }}>
       <svg className="absolute inset-0 w-full h-full z-0">
         <defs>
           <linearGradient id="skillFlow" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -77,7 +89,7 @@ export function SkillTreeUniverse() {
                   transition={{
                     duration: 3,
                     repeat: Infinity,
-                    delay: Math.random() * 2,
+                    delay: (skill.level + prereq.level) % 4 * 0.5,
                     ease: "easeInOut",
                   }}
                 />
@@ -88,9 +100,12 @@ export function SkillTreeUniverse() {
       </svg>
 
       {SKILL_TREE.map((skill, i) => (
-        <motion.div
+        <motion.button
           key={skill.id}
-          className="absolute z-10"
+          type="button"
+          aria-label={`${skill.name}，等级 ${skill.level}，演示进度 ${skill.progress}%`}
+          aria-pressed={selectedSkill === skill.id}
+          className="absolute z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-neon-cyan"
           style={{
             left: scaleX(skill.x),
             top: scaleY(skill.y),
@@ -102,10 +117,17 @@ export function SkillTreeUniverse() {
           transition={{ delay: i * 0.1, type: "spring", stiffness: 200 }}
           onMouseEnter={() => setHoveredSkill(skill.id)}
           onMouseLeave={() => setHoveredSkill(null)}
+          onFocus={() => setHoveredSkill(skill.id)}
+          onBlur={() => setHoveredSkill(null)}
+          onClick={() => selectSkill(skill.id)}
         >
-          <SkillNodeCard skill={skill} isHovered={hoveredSkill === skill.id} />
-        </motion.div>
+          <SkillNodeCard skill={skill} isHovered={hoveredSkill === skill.id || selectedSkill === skill.id} />
+        </motion.button>
       ))}
+    </div>
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2" aria-label="技能选择">
+      {SKILL_TREE.map((skill) => <button key={skill.id} type="button" aria-pressed={selectedSkill === skill.id} onClick={() => selectSkill(skill.id)} className={`text-left text-xs p-2 border rounded break-words ${selectedSkill === skill.id ? "border-neon-cyan text-neon-cyan" : "border-white/15 text-white/60"}`}><span>{skill.name}</span><span className="block text-[10px] opacity-70">Lv.{skill.level} · {skill.progress}% · {skill.unlocked ? "已解锁" : "未解锁"}</span><span className="block text-[10px] opacity-70">{skill.category}</span></button>)}
+    </div>
     </div>
   );
 }
@@ -133,7 +155,7 @@ function SkillNodeCard({
           opacity: skill.unlocked ? [0.1, 0.3, 0.1] : 0.05,
           scale: [0.8, 1.2, 0.8],
         }}
-        transition={{ duration: 2 + Math.random(), repeat: Infinity }}
+        transition={{ duration: 2 + (skill.level % 3) * 0.25, repeat: Infinity }}
       />
 
       <div
@@ -164,9 +186,9 @@ function SkillNodeCard({
         )}
       </div>
 
-      <div className="text-center mt-1.5">
+      <div className="text-center mt-1.5 w-16 md:w-36 -ml-2 md:-ml-10">
         <p
-          className="text-[9px] md:text-[10px] font-mono tracking-[0.1em] whitespace-nowrap"
+          className="text-[11px] md:text-[10px] font-mono break-words"
           style={{ color }}
         >
           {skill.name}
@@ -176,7 +198,7 @@ function SkillNodeCard({
       <AnimatePresence>
         {isHovered && (
           <motion.div
-            className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 w-40 glass-panel p-3 z-20"
+            className="absolute left-1/2 -translate-x-1/2 top-full mt-3 w-32 md:w-40 glass-panel p-3 z-20 hidden md:block"
             initial={{ opacity: 0, y: 10, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.9 }}
@@ -191,9 +213,9 @@ function SkillNodeCard({
                   transition={{ duration: 0.8 }}
                 />
               </div>
-              <span className="text-[9px] font-mono text-neon-cyan">{skill.progress}%</span>
+              <span className="text-[11px] font-mono text-neon-cyan">{skill.progress}%</span>
             </div>
-            <span className="text-[8px] font-mono text-white/30 uppercase">
+            <span className="text-[11px] font-mono text-white/55 uppercase">
               Lv.{skill.level} · {skill.category}
             </span>
             <div className="mt-1.5 flex items-center gap-1">

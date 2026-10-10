@@ -1,42 +1,11 @@
 "use client";
 
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
 import { GlassCard } from "@/components/core/GlassCard";
-
-interface HeatNode {
-  id: string;
-  city: string;
-  country: string;
-  x: number;
-  y: number;
-  intensity: number;
-  agents: number;
-  tier: 1 | 2 | 3;
-}
-
-const HEAT_NODES: HeatNode[] = [
-  { id: "sf", city: "San Francisco", country: "USA", x: 10, y: 32, intensity: 98, agents: 12470, tier: 1 },
-  { id: "ny", city: "New York", country: "USA", x: 24, y: 30, intensity: 92, agents: 9840, tier: 1 },
-  { id: "lon", city: "London", country: "UK", x: 46, y: 22, intensity: 88, agents: 7650, tier: 1 },
-  { id: "ber", city: "Berlin", country: "Germany", x: 50, y: 20, intensity: 72, agents: 4320, tier: 2 },
-  { id: "tko", city: "Tokyo", country: "Japan", x: 84, y: 32, intensity: 85, agents: 6890, tier: 1 },
-  { id: "sgp", city: "Singapore", country: "Singapore", x: 74, y: 48, intensity: 76, agents: 5210, tier: 2 },
-  { id: "sha", city: "Shanghai", country: "China", x: 78, y: 36, intensity: 90, agents: 8950, tier: 1 },
-  { id: "bj", city: "Beijing", country: "China", x: 76, y: 28, intensity: 82, agents: 6430, tier: 1 },
-  { id: "blr", city: "Bangalore", country: "India", x: 68, y: 44, intensity: 78, agents: 5980, tier: 2 },
-  { id: "syd", city: "Sydney", country: "Australia", x: 88, y: 58, intensity: 45, agents: 2100, tier: 3 },
-  { id: "tor", city: "Toronto", country: "Canada", x: 22, y: 26, intensity: 65, agents: 3890, tier: 2 },
-  { id: "par", city: "Paris", country: "France", x: 48, y: 24, intensity: 60, agents: 3420, tier: 2 },
-  { id: "dub", city: "Dubai", country: "UAE", x: 60, y: 40, intensity: 55, agents: 2890, tier: 2 },
-  { id: "sel", city: "Seoul", country: "Korea", x: 82, y: 30, intensity: 70, agents: 4560, tier: 2 },
-  { id: "ams", city: "Amsterdam", country: "Netherlands", x: 49, y: 19, intensity: 42, agents: 1870, tier: 3 },
-  { id: "sp", city: "São Paulo", country: "Brazil", x: 32, y: 62, intensity: 38, agents: 1520, tier: 3 },
-  { id: "nbo", city: "Nairobi", country: "Kenya", x: 56, y: 56, intensity: 30, agents: 890, tier: 3 },
-  { id: "tlv", city: "Tel Aviv", country: "Israel", x: 55, y: 38, intensity: 52, agents: 2340, tier: 2 },
-  { id: "ist", city: "Istanbul", country: "Turkey", x: 53, y: 30, intensity: 40, agents: 1640, tier: 3 },
-  { id: "mex", city: "Mexico City", country: "Mexico", x: 18, y: 44, intensity: 35, agents: 1250, tier: 3 },
-];
+import { DemoDataNotice } from "@/components/core/DemoDataNotice";
+import { CITIES as HEAT_NODES } from "@/lib/cities";
+import { emitSceneSelection, subscribeSceneSelection } from "@/lib/scene-selection";
 
 function interpolatePoints(x1: number, y1: number, x2: number, y2: number, steps: number) {
   const pts = [];
@@ -50,6 +19,13 @@ function interpolatePoints(x1: number, y1: number, x2: number, y2: number, steps
 export function GlobalHeatMap() {
   const containerRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(containerRef, { once: true, margin: "-100px" });
+  const [selectedCity, setSelectedCity] = useState("sf");
+  useEffect(() => subscribeSceneSelection((selection) => {
+    if (selection.kind === "city" && HEAT_NODES.some((city) => city.id === selection.id)) {
+      setSelectedCity(selection.id);
+    }
+  }), []);
+  const city = HEAT_NODES.find((node) => node.id === selectedCity)!;
 
   // Generate simplified continent outlines as path strings
   const gridDots = useMemo(() => {
@@ -68,7 +44,7 @@ export function GlobalHeatMap() {
           (x > 16 && x < 24 && y > 22 && y < 28)     // Canada
         );
         if (land) {
-          dots.push({ x, y, opacity: 0.3 + Math.random() * 0.4 });
+          dots.push({ x, y, opacity: 0.3 + ((x * 7 + y * 3) % 4) * 0.1 });
         }
       }
     }
@@ -78,14 +54,15 @@ export function GlobalHeatMap() {
   return (
     <div ref={containerRef}>
       <GlassCard className="p-4 md:p-5">
-        <div className="flex items-center justify-between mb-4">
+        <DemoDataNotice>城市规模与活动强度为原型静态样本。</DemoDataNotice>
+        <div className="flex flex-wrap gap-3 items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <span className="text-neon-cyan">◎</span>
-            <h3 className="text-xs font-mono text-white/60 tracking-[0.15em]">
+            <h3 className="text-xs font-mono text-white/60 tracking-normal">
               GLOBAL AI ACTIVITY HEATMAP
             </h3>
           </div>
-          <div className="flex items-center gap-3 text-[8px] font-mono text-white/15">
+          <div className="flex items-center gap-3 text-[11px] font-mono text-white/55">
             {[
               { color: "#4FC3F7", label: "Tier-1" },
               { color: "#7C4DFF", label: "Tier-2" },
@@ -129,7 +106,10 @@ export function GlobalHeatMap() {
 
             {/* Glow circles for nodes */}
             {HEAT_NODES.map((node) => (
-              <g key={node.id}>
+              <g key={node.id} onClick={() => { setSelectedCity(node.id); emitSceneSelection({ kind: "city", id: node.id, source: "dom" }); }} style={{ cursor: "pointer" }}>
+                <title>{`${node.city} · ${node.agents.toLocaleString()} demo agents`}</title>
+                <circle cx={node.x} cy={node.y} r={2} fill="transparent" />
+                {selectedCity === node.id && <circle cx={node.x} cy={node.y} r={2} fill="none" stroke="#FFB300" strokeWidth={0.4} />}
                 {isInView && (
                   <>
                     <motion.circle
@@ -138,7 +118,7 @@ export function GlobalHeatMap() {
                       r={node.tier === 1 ? 4 : node.tier === 2 ? 2.8 : 1.8}
                       fill="url(#heatPulse)"
                       animate={{ opacity: [0.3, 0.6, 0.3] }}
-                      transition={{ duration: 2 + Math.random() * 2, repeat: Infinity }}
+                      transition={{ duration: 2 + (node.agents % 4) * 0.25, repeat: Infinity }}
                     />
                     <motion.circle
                       cx={node.x}
@@ -147,9 +127,9 @@ export function GlobalHeatMap() {
                       fill={node.tier === 1 ? "#4FC3F7" : node.tier === 2 ? "#7C4DFF" : "#546E7A"}
                       animate={{ opacity: [0.7, 1, 0.7] }}
                       transition={{
-                        duration: 1.5 + Math.random() * 1.5,
+                        duration: 1.5 + (node.intensity % 3) * 0.25,
                         repeat: Infinity,
-                        delay: Math.random() * 2,
+                        delay: (node.x + node.y) % 2,
                       }}
                       filter="url(#heatGlow)"
                     />
@@ -184,7 +164,7 @@ export function GlobalHeatMap() {
             {HEAT_NODES.filter((n) => n.tier <= 2).map((node) => (
               <motion.div
                 key={node.id}
-                className="absolute text-[7px] font-mono text-white/15 tracking-wide whitespace-nowrap"
+                className="absolute text-[11px] font-mono text-white/55 tracking-wide whitespace-nowrap"
                 style={{
                   left: `${node.x}%`,
                   top: `${(node.y / 70) * 100}%`,
@@ -192,7 +172,7 @@ export function GlobalHeatMap() {
                 }}
                 initial={{ opacity: 0 }}
                 animate={isInView ? { opacity: 0.7 } : {}}
-                transition={{ delay: 0.8 + Math.random() * 0.4 }}
+                transition={{ delay: 0.8 + (node.x % 4) * 0.1 }}
               >
                 {node.city}
               </motion.div>
@@ -209,18 +189,25 @@ export function GlobalHeatMap() {
         >
           {[
             { value: "20", label: "CITIES" },
-            { value: "76.5K", label: "TOTAL AGENTS" },
+            { value: `${(HEAT_NODES.reduce((total, node) => total + node.agents, 0) / 1000).toFixed(1)}K`, label: "DEMO AGENTS" },
             { value: "98%", label: "SFO INTENSITY" },
-            { value: "5.2M", label: "API CALLS/DAY" },
+            { value: "STATIC", label: "DATA SOURCE" },
           ].map((stat) => (
             <div key={stat.label} className="text-center">
               <div className="text-[10px] md:text-xs font-mono font-bold text-neon-blue/70">
                 {stat.value}
               </div>
-              <div className="text-[7px] font-mono text-white/15 mt-0.5">{stat.label}</div>
+              <div className="text-[11px] font-mono text-white/55 mt-0.5">{stat.label}</div>
             </div>
           ))}
         </motion.div>
+        <div className="mt-4 flex flex-col gap-2">
+          <label htmlFor="city-selection" className="text-xs text-white/60">城市</label>
+          <select id="city-selection" value={selectedCity} onChange={(event) => { setSelectedCity(event.target.value); emitSceneSelection({ kind: "city", id: event.target.value, source: "dom" }); }} className="w-full bg-[#111820] border border-white/20 rounded p-2 text-sm text-white">
+            {HEAT_NODES.map((node) => <option key={node.id} value={node.id}>{node.city} · {node.country}</option>)}
+          </select>
+          <p aria-live="polite" className="text-xs text-white/60">{city.city} · {city.agents.toLocaleString()} 个演示 Agent · 活动强度 {city.intensity}% · Tier {city.tier}</p>
+        </div>
       </GlassCard>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface AnimatedTitleProps {
@@ -18,22 +18,25 @@ export function AnimatedTitle({
   gradient = true,
   delay = 0,
 }: AnimatedTitleProps) {
-  const chars = title.split("");
+  const words = title.split(" ");
+  const reducedMotion = useReducedMotion();
 
   return (
-    <div className={cn("text-center", className)}>
+    <div className={cn("text-left max-w-3xl", className)}>
       <motion.h2
-        className="text-3xl md:text-5xl lg:text-6xl font-bold tracking-wider font-display mb-4"
-        initial="hidden"
+        className="text-2xl md:text-3xl font-semibold tracking-normal mb-3"
+        aria-label={title}
+        initial={false}
         whileInView="visible"
         viewport={{ once: true, margin: "-100px" }}
       >
-        {chars.map((char, i) => (
+        {words.map((word, i) => (
           <motion.span
             key={i}
+            aria-hidden="true"
             className={cn(
-              "inline-block",
-              gradient && "text-gradient-neon"
+              "inline-block max-w-full mr-[0.25em]",
+              gradient && "text-[#D6E8E4]"
             )}
             variants={{
               hidden: { opacity: 0, y: 40, filter: "blur(8px)" },
@@ -42,21 +45,21 @@ export function AnimatedTitle({
                 y: 0,
                 filter: "blur(0px)",
                 transition: {
-                  duration: 0.6,
-                  delay: delay + i * 0.04,
+                  duration: reducedMotion ? 0 : 0.6,
+                  delay: reducedMotion ? 0 : delay + i * 0.04,
                   ease: [0.25, 0.46, 0.45, 0.94],
                 },
               },
             }}
           >
-            {char === " " ? "\u00A0" : char}
+            {word}
           </motion.span>
         ))}
       </motion.h2>
       {subtitle && (
         <motion.p
-          className="text-lg md:text-xl text-white/50 font-light tracking-widest"
-          initial={{ opacity: 0, y: 20 }}
+          className="text-sm md:text-base text-white/70 leading-relaxed"
+          initial={reducedMotion ? false : { opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: delay + 0.5 }}

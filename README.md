@@ -67,9 +67,31 @@ npm run dev
 # 生产构建
 npm run build
 
-# 预览生产版本
-npm run start
+# 类型检查
+npm run typecheck
+
+# 构建导出位于 out/，用静态服务器在配置的 basePath 下提供
+# 本仓库 output: export，next start 不适用于静态导出
 ```
+
+## Immersive Scene (Route B)
+
+The first viewport is an interactive Three.js city, built from the original
+20 city, 6 agent, and 12 skill records. Buildings, agent robots, server campuses,
+roads, and transit craft are procedural models. No external model or image
+service is required.
+
+- Select an entity in 3D or in the original DOM controls; both views share selection.
+- Focus, orbit, pan, zoom, top view, camera reset, and quality presets are available.
+- Arrow keys, Home, plus/minus, and F operate the focused scene region.
+- Reduced motion pauses transit and camera tours; offscreen/background rendering pauses.
+- WebGL failure provides scrollable entity controls. The original content remains in HTML.
+- All metrics, logs, city activity, and Oracle responses are demo samples. No live backend is connected.
+
+Source: `main` at `56c96f7859305a5012c982bd5ee55008540ade28` from
+https://github.com/AiW520/AI-Workforce-Command-Center, retrieved 2026-10-09.
+There was no repository AGENTS.md in this revision. The original GitHub Pages
+base path `/AI-Workforce-Command-Center` and static export workflow are retained.
 
 ## 🎨 视觉系统
 

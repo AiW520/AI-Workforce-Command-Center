@@ -53,7 +53,7 @@ export function AIThoughtStream() {
   const initStreams = useCallback((w: number, h: number) => {
     const streams: ThoughtStream[] = THOUGHTS.map((text, i) => ({
       id: i,
-      text,
+      text: `[DEMO] ${text}`,
       x: randomBetween(-200, w + 200),
       y: randomBetween(40, h - 80),
       speed: randomBetween(0.25, 0.6),
@@ -70,6 +70,7 @@ export function AIThoughtStream() {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -153,19 +154,29 @@ export function AIThoughtStream() {
         ctx.fillText(s.text, s.x - textWidth / 2, s.y + waveY);
       }
 
-      animRef.current = requestAnimationFrame(animate);
+      if (!reducedMotion.matches && !document.hidden) animRef.current = requestAnimationFrame(animate);
     };
+
+    const resume = () => {
+      cancelAnimationFrame(animRef.current);
+      animate();
+    };
+    reducedMotion.addEventListener("change", resume);
+    document.addEventListener("visibilitychange", resume);
 
     animate();
     return () => {
       window.removeEventListener("resize", resize);
       cancelAnimationFrame(animRef.current);
+      reducedMotion.removeEventListener("change", resume);
+      document.removeEventListener("visibilitychange", resume);
     };
   }, [initStreams]);
 
   return (
     <canvas
       ref={canvasRef}
+      aria-hidden="true"
       className="absolute inset-0 pointer-events-none"
       style={{ zIndex: 5 }}
     />

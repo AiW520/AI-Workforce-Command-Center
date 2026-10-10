@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { GlassCard } from "@/components/core/GlassCard";
+import { DemoDataNotice } from "@/components/core/DemoDataNotice";
 
 interface LogEntry {
   id: number;
@@ -43,8 +44,8 @@ const LOG_TEMPLATES = [
 ];
 
 function generateLog(id: number): LogEntry {
-  const template = LOG_TEMPLATES[Math.floor(Math.random() * LOG_TEMPLATES.length)];
-  const n = Math.floor(Math.random() * 9000) + 100;
+  const template = LOG_TEMPLATES[id % LOG_TEMPLATES.length];
+  const n = template.result.includes("%") ? 95 + id % 5 : template.result.includes("σ") ? 3 : 100 + (id * 137) % 9000;
   const result = template.result.replace("{N}", n.toLocaleString());
   const agentInfo = AGENT_ICONS[template.agent];
   const now = new Date();
@@ -64,17 +65,17 @@ function generateLog(id: number): LogEntry {
 export function AgentLogTerminal() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [showAll, setShowAll] = useState(false);
+  const [paused, setPaused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const idRef = useRef(0);
 
   useEffect(() => {
-    // Initial logs
-    const initial: LogEntry[] = [];
-    for (let i = 0; i < 8; i++) {
-      initial.push(generateLog(idRef.current++));
+    if (idRef.current === 0) {
+      const initial: LogEntry[] = [];
+      for (let i = 0; i < 8; i++) initial.push(generateLog(idRef.current++));
+      setLogs(initial);
     }
-    setLogs(initial);
-
+    if (paused || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const interval = setInterval(() => {
       setLogs((prev) => {
         const next = [...prev, generateLog(idRef.current++)];
@@ -83,7 +84,7 @@ export function AgentLogTerminal() {
     }, 1200);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [paused]);
 
   useEffect(() => {
     if (containerRef.current && !showAll) {
@@ -95,20 +96,22 @@ export function AgentLogTerminal() {
 
   return (
     <GlassCard className="h-full flex flex-col">
-      <div className="flex items-center justify-between mb-3">
+      <DemoDataNotice>浏览器模拟日志，未连接 Agent 服务。</DemoDataNotice>
+      <div className="flex flex-wrap gap-2 items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className="text-neon-cyan">◫</span>
-          <h3 className="text-xs font-mono text-white/60 tracking-[0.15em]">
+          <h3 className="text-xs font-mono text-white/60 tracking-normal">
             AGENT LOG STREAM
           </h3>
           <span className="flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-neon-cyan animate-pulse" />
-            <span className="text-[8px] font-mono text-neon-cyan/50">LIVE</span>
+            <span className="text-[11px] font-mono text-neon-cyan/50">DEMO</span>
           </span>
         </div>
-        <button
+        <button type="button" onClick={() => setPaused(!paused)} aria-pressed={paused} className="text-xs text-white/60">{paused ? "继续" : "暂停"}</button>
+        <button type="button"
           onClick={() => setShowAll(!showAll)}
-          className="text-[8px] font-mono text-white/20 hover:text-neon-blue/60 transition-colors"
+          className="text-[11px] font-mono text-white/55 hover:text-neon-blue/60 transition-colors"
         >
           {showAll ? "COMPACT" : "ALL LOGS"}
         </button>
@@ -135,8 +138,8 @@ export function AgentLogTerminal() {
               <span className="shrink-0" style={{ color: log.color }}>
                 {log.icon}
               </span>
-              <span className="text-white/25">{log.agent}.{log.action}</span>
-              <span className="text-white/10 flex-1 text-right truncate">
+              <span className="text-white/50 min-w-0 break-words">{log.agent}.{log.action}</span>
+              <span className="text-white/40 flex-1 min-w-0 text-right truncate">
                 {log.result}
               </span>
             </motion.div>
@@ -145,10 +148,10 @@ export function AgentLogTerminal() {
       </div>
 
       {/* Stats row */}
-      <div className="mt-3 pt-3 border-t border-white/[0.03] flex items-center justify-between text-[8px] font-mono text-white/15">
+      <div className="mt-3 pt-3 border-t border-white/[0.03] flex items-center justify-between text-[11px] font-mono text-white/55">
         <span>LOGS: {logs.length}</span>
-        <span>THROUGHPUT: {Math.floor(Math.random() * 50 + 120)}/min</span>
-        <span>LATENCY: {Math.floor(Math.random() * 15 + 5)}ms</span>
+        <span>DEMO REPLAY</span>
+        <span>{paused ? "PAUSED" : "SIMULATED"}</span>
       </div>
     </GlassCard>
   );

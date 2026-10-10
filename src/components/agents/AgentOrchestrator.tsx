@@ -3,14 +3,21 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AGENTS } from "@/lib/data";
-import { useMousePosition } from "@/hooks/useMousePosition";
+import { DemoDataNotice } from "@/components/core/DemoDataNotice";
+import { emitSceneSelection, subscribeSceneSelection } from "@/lib/scene-selection";
 import type { Agent } from "@/types";
 
 export function AgentOrchestrator() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
-  const { normalizedX, normalizedY } = useMousePosition();
+  useEffect(() => subscribeSceneSelection((selection) => {
+    if (selection.kind === "agent") setSelectedAgent(AGENTS.find((agent) => agent.id === selection.id) ?? null);
+  }), []);
+  const selectAgent = (agent: Agent) => {
+    setSelectedAgent(agent);
+    emitSceneSelection({ kind: "agent", id: agent.id, source: "dom" });
+  };
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -53,7 +60,9 @@ export function AgentOrchestrator() {
   }
 
   return (
-    <div ref={containerRef} className="relative w-full" style={{ height: dimensions.height }}>
+    <div>
+      <DemoDataNotice>状态、任务量和性能指标为静态样本。</DemoDataNotice>
+      <div ref={containerRef} className="relative w-full" style={{ height: dimensions.height }}>
       <svg className="absolute inset-0 w-full h-full" style={{ zIndex: 1 }}>
         <defs>
           <radialGradient id="agentGlowBlue" cx="50%" cy="50%" r="50%">
@@ -107,7 +116,7 @@ export function AgentOrchestrator() {
             x={pos.x}
             y={pos.y}
             isSelected={selectedAgent?.id === agent.id}
-            onClick={() => setSelectedAgent(selectedAgent?.id === agent.id ? null : agent)}
+            onClick={() => selectAgent(agent)}
           />
         );
       })}
@@ -118,10 +127,15 @@ export function AgentOrchestrator() {
             agent={selectedAgent}
             position={getPosition(selectedAgent)}
             containerWidth={dimensions.width}
+            containerHeight={dimensions.height}
             onClose={() => setSelectedAgent(null)}
           />
         )}
       </AnimatePresence>
+      </div>
+      <div className="flex flex-wrap gap-2 mt-3" aria-label="Agent 选择">
+        {AGENTS.map((agent) => <button key={agent.id} type="button" aria-pressed={selectedAgent?.id === agent.id} onClick={() => selectAgent(agent)} className={`text-xs p-2 border rounded ${selectedAgent?.id === agent.id ? "border-neon-cyan text-neon-cyan" : "border-white/20 text-white/60"}`}>{agent.name}</button>)}
+      </div>
     </div>
   );
 }
@@ -227,8 +241,11 @@ function AgentNode({
   const color = statusColors[agent.status];
 
   return (
-    <motion.div
-      className="absolute z-10 cursor-pointer"
+    <motion.button
+      type="button"
+      aria-label={`${agent.name}，${agent.role}`}
+      aria-pressed={isSelected}
+      className="absolute z-10 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-neon-cyan"
       style={{ left: x, top: y, transform: "translate(-50%, -50%)" }}
       initial={{ scale: 0, opacity: 0 }}
       animate={{
@@ -292,12 +309,12 @@ function AgentNode({
         )}
       </div>
 
-      <div className="text-center mt-2">
-        <p className="text-[10px] md:text-xs font-mono text-neon-blue/80 tracking-[0.15em] whitespace-nowrap">
+      <div className="text-center mt-2 w-20 md:w-36 -ml-3 md:-ml-10">
+        <p className="text-[10px] md:text-xs font-mono text-neon-blue/80 break-words">
           {agent.name}
         </p>
       </div>
-    </motion.div>
+    </motion.button>
   );
 }
 
@@ -305,19 +322,23 @@ function AgentDetailPanel({
   agent,
   position,
   containerWidth,
+  containerHeight,
   onClose,
 }: {
   agent: Agent;
   position: { x: number; y: number };
   containerWidth: number;
+  containerHeight: number;
   onClose: () => void;
 }) {
   const panelX = position.x > containerWidth / 2 ? position.x - 320 : position.x + 60;
 
   return (
     <motion.div
-      className="absolute z-30 w-72 glass-panel p-4"
-      style={{ left: Math.max(10, Math.min(panelX, containerWidth - 300)), top: position.y - 80 }}
+      className="absolute z-30 glass-panel p-4 max-w-full"
+      role="region"
+      aria-label={`${agent.name} 详情`}
+      style={{ width: Math.min(288, containerWidth - 20), left: Math.max(10, Math.min(panelX, containerWidth - 300)), top: Math.max(10, Math.min(position.y - 80, containerHeight - 320)) }}
       initial={{ opacity: 0, scale: 0.8, y: 20 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.8, y: 20 }}
@@ -325,7 +346,8 @@ function AgentDetailPanel({
     >
       <button
         onClick={onClose}
-        className="absolute top-3 right-3 text-white/30 hover:text-white/60 transition-colors text-lg"
+        aria-label="关闭 Agent 详情"
+        className="absolute top-3 right-3 text-white/55 hover:text-white/60 transition-colors text-lg"
       >
         ×
       </button>
@@ -341,12 +363,13 @@ function AgentDetailPanel({
       </div>
 
       <p className="text-xs text-white/50 mb-4 leading-relaxed">{agent.description}</p>
+      <p className="text-[10px] text-amber-200/70 mb-3">DEMO · 以下为演示指标</p>
 
       <div className="space-y-2">
         {[
-          { label: "Tasks", value: agent.metrics.tasksCompleted.toLocaleString(), color: "#4FC3F7" },
-          { label: "Accuracy", value: `${agent.metrics.accuracy}%`, color: "#7C4DFF" },
-          { label: "Latency", value: `${agent.metrics.latency}ms`, color: "#00E5FF" },
+          { label: "Tasks", value: agent.metrics.tasksCompleted.toLocaleString(), progress: agent.metrics.tasksCompleted / 160, color: "#4FC3F7" },
+          { label: "Accuracy", value: `${agent.metrics.accuracy}%`, progress: agent.metrics.accuracy, color: "#7C4DFF" },
+          { label: "Latency", value: `${agent.metrics.latency}ms`, progress: agent.metrics.latency, color: "#00E5FF" },
         ].map((metric) => (
           <div key={metric.label} className="flex items-center justify-between">
             <span className="text-[10px] font-mono text-white/40">{metric.label}</span>
@@ -357,7 +380,7 @@ function AgentDetailPanel({
                   style={{ backgroundColor: metric.color }}
                   initial={{ width: 0 }}
                   animate={{
-                    width: `${Math.min(100, (parseFloat(metric.value) / 15000) * 100)}%`,
+                    width: `${Math.min(100, metric.progress)}%`,
                   }}
                   transition={{ duration: 1, delay: 0.3 }}
                 />
@@ -369,7 +392,7 @@ function AgentDetailPanel({
       </div>
 
       <div className="mt-3 pt-3 border-t border-white/5">
-        <span className="text-[9px] font-mono text-white/20 uppercase tracking-[0.2em]">
+        <span className="text-[11px] font-mono text-white/55 uppercase tracking-normal">
           Status: <span className="text-neon-cyan">{agent.status.toUpperCase()}</span>
         </span>
       </div>

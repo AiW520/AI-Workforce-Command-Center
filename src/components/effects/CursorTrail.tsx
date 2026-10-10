@@ -23,6 +23,7 @@ export function CursorTrail() {
   const dimsRef = useRef({ w: 0, h: 0 });
 
   useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce), (pointer: coarse)").matches) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -112,6 +113,7 @@ export function CursorTrail() {
   return (
     <canvas
       ref={canvasRef}
+      aria-hidden="true"
       className="fixed inset-0 pointer-events-none"
       style={{ zIndex: 250 }}
     />

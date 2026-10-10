@@ -17,7 +17,7 @@ export function Footer() {
               viewport={{ once: true }}
             >
               <span className="text-neon-blue text-xl">◈</span>
-              <span className="text-sm font-mono text-neon-blue/70 tracking-[0.2em]">
+              <span className="text-sm font-mono text-neon-blue/70 tracking-normal">
                 NEXUS
               </span>
             </motion.div>
@@ -34,7 +34,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-[10px] font-mono text-white/20 tracking-[0.3em] uppercase mb-4">
+            <h4 className="text-[10px] font-mono text-white/55 tracking-normal uppercase mb-4">
               Civilization Sections
             </h4>
             <div className="space-y-2">
@@ -48,7 +48,7 @@ export function Footer() {
               ].map((section, i) => (
                 <motion.p
                   key={section}
-                  className="text-xs text-white/20 hover:text-neon-blue/50 transition-colors cursor-pointer font-mono tracking-wide"
+                  className="text-xs text-white/55 hover:text-neon-blue/50 transition-colors cursor-pointer font-mono tracking-wide"
                   initial={{ opacity: 0, x: -10 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
@@ -61,7 +61,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-[10px] font-mono text-white/20 tracking-[0.3em] uppercase mb-4">
+            <h4 className="text-[10px] font-mono text-white/55 tracking-normal uppercase mb-4">
               Technology Stack
             </h4>
             <div className="flex flex-wrap gap-2">
@@ -77,7 +77,7 @@ export function Footer() {
               ].map((tech, i) => (
                 <motion.span
                   key={tech}
-                  className="text-[9px] font-mono px-2.5 py-1 rounded-full bg-white/[0.015] border border-white/[0.03] text-white/15"
+                  className="text-[11px] font-mono px-2.5 py-1 rounded-full bg-white/[0.015] border border-white/[0.03] text-white/55"
                   initial={{ opacity: 0, scale: 0.8 }}
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={{ once: true }}
@@ -97,11 +97,11 @@ export function Footer() {
           viewport={{ once: true }}
           transition={{ delay: 0.4 }}
         >
-          <span className="text-[9px] font-mono text-white/12">
+          <span className="text-[11px] font-mono text-white/12">
             © 2035 NEXUS AI CIVILIZATION · OS v4.0 · All Systems Nominal
           </span>
           <div className="flex items-center gap-4">
-            <span className="text-[8px] font-mono text-white/08">NEXUS·LINK·ESTABLISHED</span>
+            <span className="text-[11px] font-mono text-white/08">NEXUS·LINK·ESTABLISHED</span>
             <span className="w-1.5 h-1.5 rounded-full bg-neon-cyan/30 animate-pulse" />
           </div>
         </motion.div>

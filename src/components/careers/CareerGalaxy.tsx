@@ -110,7 +110,7 @@ export function CareerGalaxy() {
               opacity={0.7}
               filter="url(#starGlow)"
               animate={{ opacity: [0.5, 0.9, 0.5] }}
-              transition={{ duration: 2 + Math.random() * 2, repeat: Infinity }}
+              transition={{ duration: 2 + (role.demand % 4) * 0.25, repeat: Infinity }}
             />
           );
         })}
@@ -192,7 +192,7 @@ export function CareerGalaxy() {
               {selectedRole.skills.map((skill) => (
                 <span
                   key={skill}
-                  className="text-[8px] font-mono px-2 py-0.5 rounded-full bg-neon-blue/5 border border-neon-blue/10 text-neon-blue/60"
+                  className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-neon-blue/5 border border-neon-blue/10 text-neon-blue/60"
                 >
                   {skill}
                 </span>
@@ -202,7 +202,7 @@ export function CareerGalaxy() {
               {selectedRole.companies.map((company) => (
                 <span
                   key={company}
-                  className="text-[8px] font-mono text-white/20"
+                  className="text-[11px] font-mono text-white/55"
                 >
                   {company}
                 </span>
@@ -270,7 +270,7 @@ function CareerNode({
         }}
       >
         <span
-          className="absolute -top-4 left-1/2 -translate-x-1/2 text-[7px] md:text-[8px] font-mono whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute -top-4 left-1/2 -translate-x-1/2 text-[11px] md:text-[11px] font-mono whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity"
           style={{ color: demandColor }}
         >
           {role.title}

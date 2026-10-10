@@ -4,6 +4,7 @@ const nextConfig = {
   basePath: '/AI-Workforce-Command-Center',
   images: { unoptimized: true },
   trailingSlash: true,
+  experimental: { cpus: 2 },
 };
 
 module.exports = nextConfig;

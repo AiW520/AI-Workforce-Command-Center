@@ -28,27 +28,48 @@ export function BootSequence({ onComplete }: { onComplete: () => void }) {
   const [progress, setProgress] = useState(0);
   const [phase, setPhase] = useState<"booting" | "ready" | "exiting">("booting");
   const logIndexRef = useRef(0);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const skipRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
+    setMounted(true);
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReducedMotion(mediaQuery.matches);
+    if (mediaQuery.matches) {
+      onComplete();
+      return;
+    }
+
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
     const interval = setInterval(() => {
       if (logIndexRef.current < BOOT_LOGS.length) {
-        setVisibleLogs((prev) => [...prev, BOOT_LOGS[logIndexRef.current]]);
+        const log = BOOT_LOGS[logIndexRef.current];
+        setVisibleLogs((prev) => [...prev, log]);
         setProgress(((logIndexRef.current + 1) / BOOT_LOGS.length) * 100);
         logIndexRef.current++;
       } else {
         clearInterval(interval);
-        setTimeout(() => {
+        timeouts.push(setTimeout(() => {
           setPhase("ready");
-          setTimeout(() => {
+          timeouts.push(setTimeout(() => {
             setPhase("exiting");
-            setTimeout(onComplete, 800);
-          }, 800);
-        }, 400);
+            timeouts.push(setTimeout(onComplete, 800));
+          }, 800));
+        }, 400));
       }
     }, 200 + Math.random() * 150);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      timeouts.forEach(clearTimeout);
+    };
   }, [onComplete]);
+
+  const skipBoot = () => {
+    setPhase("exiting");
+    onComplete();
+  };
 
   const statusChars: Record<string, string> = {
     ok: "OK",
@@ -64,12 +85,32 @@ export function BootSequence({ onComplete }: { onComplete: () => void }) {
 
   return (
     <AnimatePresence>
-      {phase !== "exiting" && (
+      {mounted && phase !== "exiting" && (
         <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="boot-title"
+          onKeyDown={(event) => {
+            if (event.key === "Escape") skipBoot();
+            if (event.key === "Tab") {
+              event.preventDefault();
+              skipRef.current?.focus();
+            }
+          }}
           className="fixed inset-0 z-[300] flex items-center justify-center bg-black"
           exit={{ opacity: 0 }}
           transition={{ duration: 0.6 }}
         >
+          <button
+            ref={skipRef}
+            autoFocus
+            type="button"
+            onClick={skipBoot}
+            className="absolute top-4 right-4 z-20 px-3 py-2 text-[10px] font-mono tracking-normal text-white/45 border border-white/15 rounded-md hover:text-white hover:border-white/35 focus-visible:outline focus-visible:outline-2 focus-visible:outline-neon-blue"
+            aria-label="Skip system initialization"
+          >
+            SKIP INTRO
+          </button>
           {/* Background grid */}
           <div className="absolute inset-0">
             <svg className="w-full h-full opacity-[0.04]" xmlns="http://www.w3.org/2000/svg">
@@ -102,25 +143,26 @@ export function BootSequence({ onComplete }: { onComplete: () => void }) {
             >
               <motion.div
                 className="inline-block text-5xl md:text-6xl text-neon-blue"
-                animate={{
+                animate={reducedMotion ? undefined : {
                   textShadow: [
                     "0 0 20px rgba(79,195,247,0.3)",
                     "0 0 40px rgba(124,77,255,0.5)",
                     "0 0 20px rgba(79,195,247,0.3)",
                   ],
                 }}
-                transition={{ duration: 2, repeat: Infinity }}
+                transition={reducedMotion ? undefined : { duration: 2, repeat: Infinity }}
               >
                 ◈
               </motion.div>
               <motion.h1
-                className="mt-3 text-xl md:text-2xl font-mono font-bold text-neon-blue/80 tracking-[0.3em]"
-                animate={{ opacity: [0.6, 1, 0.6] }}
-                transition={{ duration: 2, repeat: Infinity }}
+                id="boot-title"
+                className="mt-3 text-xl md:text-2xl font-mono font-bold text-neon-blue/80 tracking-normal"
+                animate={reducedMotion ? undefined : { opacity: [0.6, 1, 0.6] }}
+                transition={reducedMotion ? undefined : { duration: 2, repeat: Infinity }}
               >
                 NEXUS AI CIVILIZATION
               </motion.h1>
-              <p className="mt-2 text-[10px] font-mono text-white/20 tracking-[0.4em]">
+              <p className="mt-2 text-[10px] font-mono text-white/55 tracking-normal">
                 OPERATING SYSTEM v4.0
               </p>
             </motion.div>
@@ -128,10 +170,10 @@ export function BootSequence({ onComplete }: { onComplete: () => void }) {
             {/* Progress bar */}
             <div className="mb-6">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[9px] font-mono text-white/20 tracking-[0.2em]">
+                <span className="text-[11px] font-mono text-white/55 tracking-normal">
                   SYSTEM INITIALIZATION
                 </span>
-                <span className="text-[9px] font-mono text-neon-blue/60">
+                <span className="text-[11px] font-mono text-neon-blue/60">
                   {Math.round(progress)}%
                 </span>
               </div>
@@ -171,8 +213,8 @@ export function BootSequence({ onComplete }: { onComplete: () => void }) {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <span className="text-white/15 shrink-0">[{log?.module || "UNKNOWN"}]</span>
-                  <span className="text-white/30 flex-1">{log?.message || "..."}</span>
+                  <span className="text-white/55 shrink-0">[{log?.module || "UNKNOWN"}]</span>
+                  <span className="text-white/55 flex-1">{log?.message || "..."}</span>
                   <span className={`${statusColors[log?.status || "info"]} shrink-0`}>
                     [{statusChars[log?.status || "info"]}]
                   </span>
@@ -204,8 +246,8 @@ export function BootSequence({ onComplete }: { onComplete: () => void }) {
                   { label: "GPU", val: "78%" },
                 ].map((stat) => (
                   <div key={stat.label} className="text-center">
-                    <div className="text-[8px] font-mono text-white/12">{stat.label}</div>
-                    <div className="text-[9px] font-mono text-white/20 mt-0.5">{stat.val}</div>
+                    <div className="text-[11px] font-mono text-white/12">{stat.label}</div>
+                    <div className="text-[11px] font-mono text-white/55 mt-0.5">{stat.val}</div>
                   </div>
                 ))}
               </motion.div>
@@ -221,7 +263,7 @@ export function BootSequence({ onComplete }: { onComplete: () => void }) {
                   exit={{ opacity: 0 }}
                 >
                   <motion.span
-                    className="inline-block px-6 py-2 rounded-full bg-neon-blue/5 border border-neon-blue/20 text-neon-blue text-xs font-mono tracking-[0.3em]"
+                    className="inline-block px-6 py-2 rounded-full bg-neon-blue/5 border border-neon-blue/20 text-neon-blue text-xs font-mono tracking-normal"
                     animate={{ opacity: [0.6, 1, 0.6] }}
                     transition={{ duration: 0.6, repeat: Infinity }}
                   >
